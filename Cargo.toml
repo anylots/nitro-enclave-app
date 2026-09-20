@@ -1,0 +1,50 @@
+[package]
+name = "nitro-enclave-app"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95.0"
+authors = ["developers"]
+license = "MIT OR Apache-2.0"
+
+
+[dependencies]
+# alloy
+alloy-signer = { version = "2.3.0" }
+alloy-signer-local = { version = "2.3.0", default-features = false }
+alloy-primitives = { version = "1.6.1", default-features = false, features = [
+    "sha3-keccak",
+] }
+
+# nsm
+aws-nitro-enclaves-nsm-api = "0.4"
+
+# utils
+serde = { version = "1.0", features = ["derive"] }
+bincode = { version = "2", features = ["serde"] }
+thiserror = "2.0.14"
+
+# async
+tokio = { version = "1.51.1", default-features = false, features = [
+    "rt",
+    "rt-multi-thread",
+    "time",
+    "io-util",
+    "macros",
+] }
+
+# misc
+tracing = "0.1.44"
+
+
+[target.'cfg(target_os = "linux")'.dependencies]
+eyre = "0.6.12"
+tokio-vsock = "0.7"
+
+[dev-dependencies]
+tokio = { version = "1.51.1", default-features = false, features = [
+    "rt",
+    "rt-multi-thread",
+    "time",
+    "io-util",
+    "macros",
+] }

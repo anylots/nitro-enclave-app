@@ -1,0 +1,29 @@
+# syntax=docker/dockerfile:1.7
+
+FROM rust:1.95-bookworm@sha256:6258907abe69656e41cd992e0b705cdcfabcbbe3db374f92ed2d47121282d4a1 AS builder
+
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y \
+        clang cmake libclang-dev libssl-dev pkg-config protobuf-compiler \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY . .
+
+RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+    --mount=type=cache,target=/usr/local/cargo/git,sharing=locked \
+    --mount=type=cache,target=/app/target,sharing=locked \
+    cargo build --locked --release --bin nitro-enclave-app \
+    && install -m 0755 target/release/nitro-enclave-app /usr/local/bin/nitro-enclave-app
+
+FROM debian:bookworm-slim@sha256:4724b8cc51e33e398f0e2e15e18d5ec2851ff0c2280647e1310bc1642182655d
+
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y libssl3 libstdc++6 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /usr/local/bin/nitro-enclave-app /usr/local/bin/nitro-enclave-app
+
+USER 65532:65532
+ENTRYPOINT ["/usr/local/bin/nitro-enclave-app"]
+

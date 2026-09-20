@@ -1,0 +1,24 @@
+FROM nitro-kernel AS nitro-kernel
+
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023@sha256:6d8e068b91f351df5bf6acd4bd261316e42747ad4bae76689ff6f4939e2180a2
+
+ARG NITRO_CLI_VERSION=1.4.5-0.amzn2023
+
+RUN dnf install -y \
+        file \
+        "aws-nitro-enclaves-cli-${NITRO_CLI_VERSION}" \
+        "aws-nitro-enclaves-cli-devel-${NITRO_CLI_VERSION}" \
+    && dnf clean all \
+    && rm -rf /var/cache/dnf
+
+# Use a matched Linux kernel and NSM module from the pinned AWS bootstrap
+# source. This replaces the older kernel bundled with Nitro CLI.
+COPY --from=nitro-kernel /blobs/bzImage /usr/share/nitro_enclaves/blobs/bzImage
+COPY --from=nitro-kernel /blobs/bzImage.config /usr/share/nitro_enclaves/blobs/bzImage.config
+COPY --from=nitro-kernel /blobs/nsm.ko /usr/share/nitro_enclaves/blobs/nsm.ko
+
+RUN file /usr/share/nitro_enclaves/blobs/bzImage | grep -Fq 'version 6.6.79' \
+    && grep -aFq 'vermagic=6.6.79' /usr/share/nitro_enclaves/blobs/nsm.ko
+
+ENTRYPOINT ["nitro-cli"]
+
